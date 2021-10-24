@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @Controller
 //@RequestMapping(path="/api")
@@ -16,26 +18,26 @@ public class MainController {
 
     @PostMapping("/socks/income")
     public @ResponseBody String addNewSocks (@RequestParam String color ,
-                                @RequestParam Integer cottonPart ,
-                                @RequestParam Integer quantity) {
+                                             @RequestParam Integer cottonPart ,
+                                             @RequestParam Integer quantity) {
 
 
         Socks n1 = new Socks(color, cottonPart, quantity);
         if (socksRepo.findByColorAndCottonPart(color, cottonPart) != null) {
-        Socks n2 = socksRepo.findByColorAndCottonPart(color, cottonPart);
-        Socks n3 = new Socks(color, cottonPart, n1.getQuantity()+n2.getQuantity());
-        socksRepo.save(n3);
-        socksRepo.delete(n2);
+            Socks n2 = socksRepo.findByColorAndCottonPart(color, cottonPart);
+            Socks n3 = new Socks(color, cottonPart, n1.getQuantity()+n2.getQuantity());
+            socksRepo.save(n3);
+            socksRepo.delete(n2);
         }
         else {
-        socksRepo.save(n1); }
+            socksRepo.save(n1); }
         return "Added";
     }
 
     @PostMapping("/socks/outcome")
     public @ResponseBody String deleteSocks (@RequestParam String color ,
-                        @RequestParam Integer cottonPart ,
-                        @RequestParam Integer quantity) {
+                                             @RequestParam Integer cottonPart ,
+                                             @RequestParam Integer quantity) {
 
 
         Socks n1 = new Socks(color, cottonPart, quantity);
@@ -51,11 +53,20 @@ public class MainController {
     @GetMapping("/socks/test")
     public @ResponseBody Integer getAllSocks(@RequestParam String color , @RequestParam String operation,
                                              @RequestParam Integer cottonPart) {
-        if (operation == "moreThan") {}
-        else if (operation == "lessThan") {}
-        else if(operation == "equal") {
+        if (operation.equals("moreThan")) {
+            Integer count = new Integer(0);
+            List<Socks> socks =socksRepo.findByCottonPartGreaterThan(cottonPart);
+            for (Socks s : socks) { count = count +s.getQuantity();}
+            return count;
+        }
+        else if (operation.equals("lessThan")) {
+            Integer count = new Integer(0);
+            List<Socks> socks =socksRepo.findByCottonPartLessThan(cottonPart);
+            for (Socks s : socks) { count = count +s.getQuantity();}
+            return count;
+        }
+        else if(operation.equals("equal")) {
             Socks n2 = socksRepo.findByColorAndCottonPart(color, cottonPart);
-            System.out.println(""+n2.getQuantity());
             return n2.getQuantity();
         }
         return 10;
