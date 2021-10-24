@@ -51,7 +51,7 @@ public class MainController {
     }
 
     @GetMapping("/socks/test")
-    public @ResponseBody Integer getAllSocks(@RequestParam String color , @RequestParam String operation,
+    public @ResponseBody Integer getSocks(@RequestParam String color , @RequestParam String operation,
                                              @RequestParam Integer cottonPart) {
         if (operation.equals("moreThan")) {
             Integer count = new Integer(0);
@@ -69,7 +69,7 @@ public class MainController {
             Socks n2 = socksRepo.findByColorAndCottonPart(color, cottonPart);
             return n2.getQuantity();
         }
-        return 10;
+        return 404;
     }
     @GetMapping("/socks")
     public @ResponseBody Iterable<Socks> getAllSocks() {
