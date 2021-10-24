@@ -1,79 +1,65 @@
 package com.example.raif.controller;
 
-import com.example.raif.domain.Socks;
-import com.example.raif.repos.SocksRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.raif.dto.RequestDto;
+import com.example.raif.service.SocksService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-
 @Controller
-//@RequestMapping(path="/api")
 public class MainController {
 
-    @Autowired
-    private SocksRepo socksRepo;
+    private final SocksService socksService;
 
-    @PostMapping("/socks/income")
-    public @ResponseBody String addNewSocks (@RequestParam String color ,
-                                             @RequestParam Integer cottonPart ,
-                                             @RequestParam Integer quantity) {
-
-
-        Socks n1 = new Socks(color, cottonPart, quantity);
-        if (socksRepo.findByColorAndCottonPart(color, cottonPart) != null) {
-            Socks n2 = socksRepo.findByColorAndCottonPart(color, cottonPart);
-            Socks n3 = new Socks(color, cottonPart, n1.getQuantity()+n2.getQuantity());
-            socksRepo.save(n3);
-            socksRepo.delete(n2);
-        }
-        else {
-            socksRepo.save(n1); }
-        return "Added";
+    public MainController(SocksService socksService) {
+        this.socksService = socksService;
     }
 
-    @PostMapping("/socks/outcome")
-    public @ResponseBody String deleteSocks (@RequestParam String color ,
-                                             @RequestParam Integer cottonPart ,
-                                             @RequestParam Integer quantity) {
+    @PostMapping("/api/socks/income")
+    public @ResponseBody ResponseEntity<Object> addNewSocks (@RequestBody RequestDto request) {
 
-
-        Socks n1 = new Socks(color, cottonPart, quantity);
-        if (socksRepo.findByColorAndCottonPart(color, cottonPart) != null) {
-            Socks n2 = socksRepo.findByColorAndCottonPart(color, cottonPart);
-            Socks n3 = new Socks(color, cottonPart, n2.getQuantity()-n1.getQuantity());
-            socksRepo.save(n3);
-            socksRepo.delete(n2);
-        }
-        return "Deleted";
+        if (!checkRequest(request))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        return socksService.addSocks(request)?
+                ResponseEntity.ok().build():
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        
     }
 
-    @GetMapping("/socks/test")
-    public @ResponseBody Integer getSocks(@RequestParam String color , @RequestParam String operation,
-                                             @RequestParam Integer cottonPart) {
-        if (operation.equals("moreThan")) {
-            Integer count = new Integer(0);
-            List<Socks> socks =socksRepo.findByCottonPartGreaterThan(cottonPart);
-            for (Socks s : socks) { count = count +s.getQuantity();}
-            return count;
-        }
-        else if (operation.equals("lessThan")) {
-            Integer count = new Integer(0);
-            List<Socks> socks =socksRepo.findByCottonPartLessThan(cottonPart);
-            for (Socks s : socks) { count = count +s.getQuantity();}
-            return count;
-        }
-        else if(operation.equals("equal")) {
-            Socks n2 = socksRepo.findByColorAndCottonPart(color, cottonPart);
-            return n2.getQuantity();
-        }
-        return 404;
+    @PostMapping("/api/socks/outcome")
+    public @ResponseBody ResponseEntity<Object> deleteSocks (@RequestBody RequestDto request) {
+
+        if (!checkRequest(request))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        return socksService.deleteSocks(request)?
+                ResponseEntity.ok().build():
+                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
     }
-    @GetMapping("/socks")
-    public @ResponseBody Iterable<Socks> getAllSocks() {
-        return socksRepo.findAll();
+
+    @GetMapping("api/socks")
+    public @ResponseBody ResponseEntity<Integer> getSocks(@RequestParam String color ,
+                                                          @RequestParam String operation,
+                                                          @RequestParam Integer cottonPart) {
+
+
+        if (!checkRequest(color , operation, cottonPart))
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        Integer result = socksService.getQuantity(color, operation, cottonPart);
+        if (result == null)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        return ResponseEntity.ok(result);
+
+    }
+
+
+    private boolean checkRequest (RequestDto request) {
+        return request != null && request.getColor() != null && request.getCottonPart() != null && request.getQuantity() != null && request.getCottonPart() >= 0 && request.getCottonPart() <= 100 && request.getQuantity() > 0;
+    }
+
+    private boolean checkRequest (String color , String operation, Integer cottonPart) {
+        return color != null && cottonPart != null && operation != null && cottonPart >= 0 && cottonPart <= 100;
     }
 
 }
